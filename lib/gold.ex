@@ -5,6 +5,7 @@ defmodule Gold do
 
   alias Gold.Config
   alias Gold.Transaction
+  alias Gold.Block
 
   ##
   # Client-side
@@ -32,6 +33,26 @@ defmodule Gold do
   def getbalance!(pid) do
     {:ok, balance} = getbalance(pid)
     balance
+  end
+
+  @doc """
+  Returns the raw block with hash.
+  """
+  def getblock(pid, hash) do
+    case GenServer.call(pid, {:getblock, [hash]}) do
+      {:ok, block} ->
+        {:ok, Block.from_json block}
+      otherwise ->
+        otherwise
+    end
+  end
+
+  @doc """
+  Returns the raw block with hash, raising an exception on failure.
+  """
+  def getblock!(pid, hash) do
+    {:ok, block} = getblock(pid, hash)
+    block
   end
 
   @doc """
@@ -138,6 +159,27 @@ defmodule Gold do
   """
   def gettransaction!(pid, txid) do
     {:ok, tx} = gettransaction(pid, txid)
+    tx
+  end
+
+  @doc """
+  Get raw transaction by id.
+  """
+  def getrawtransaction(pid, txid) do
+    case GenServer.call(pid, {:getrawtransaction, [txid]}) do
+      {:ok, transaction} ->
+        {:ok, transaction}
+      otherwise ->
+        otherwise
+    end
+  end
+
+  @doc """
+  Get raw transaction by id, raising an exception on
+  failure.
+  """
+  def getrawtransaction!(pid, txid) do
+    {:ok, tx} = getrawtransaction(pid, txid)
     tx
   end
 
