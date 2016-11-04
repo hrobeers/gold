@@ -11,7 +11,7 @@ defmodule Gold.Transaction do
              :blockindex,
              :txid,
              :time,
-             :timereceived,
+#             :timereceived,  # timereceived not returned by ppcoin v0.5.4
              :comment,
              :otheraccount]
 
@@ -36,7 +36,7 @@ defmodule Gold.Transaction do
       txid:          Map.fetch!(tx, "txid"),
 
       time:          Map.fetch!(tx, "time"),
-      timereceived:  Map.fetch!(tx, "timereceived"),
+#      timereceived:  Map.fetch!(tx, "timereceived"),
       comment:       Map.get(tx, "comment", nil),
       otheraccount:  Map.get(tx, "otheraccount", nil)
     }
