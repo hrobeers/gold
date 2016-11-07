@@ -7,6 +7,8 @@ defmodule Gold do
   alias Gold.Transaction
   alias Gold.Block
 
+  @satoshi_exponent Application.get_env(:gold, :satoshi_exponent)
+
   ##
   # Client-side
   ##
@@ -297,13 +299,13 @@ defmodule Gold do
   Converts a float BTC amount to an Decimal.
   """
   def btc_to_decimal(btc) when is_float(btc) do
-    satoshi_per_btc = :math.pow(10, 8)
+    satoshi_per_btc = :math.pow(10, @satoshi_exponent)
 
     # Convert the bitcoins to integer to avoid any precision loss
     satoshi = round(btc * satoshi_per_btc)
 
     # Now construct a decimal
-    %Decimal{sign: if(satoshi < 0, do: -1, else: 1), coef: abs(satoshi), exp: -8}
+    %Decimal{sign: if(satoshi < 0, do: -1, else: 1), coef: abs(satoshi), exp: -@satoshi_exponent}
   end
 
   def btc_to_decimal(nil), do: nil
