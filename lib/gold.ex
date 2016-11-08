@@ -19,6 +19,21 @@ defmodule Gold do
   def start_link(config, name), do: GenServer.start_link(__MODULE__, config, name: name)
 
   @doc """
+  Returns the addresses for an account.
+  """
+  def getaddressesbyaccount(pid, account) do
+    GenServer.call(pid, {:getaddressesbyaccount, [account]})
+  end
+
+  @doc """
+  Returns the addresses for an account, raising an exception on failure.
+  """
+  def getaddressesbyaccount!(pid, account) do
+    {:ok, addresses} = getaddressesbyaccount(pid, account)
+    addresses
+  end
+
+  @doc """
   Returns server's total available balance.
   """
   def getbalance(pid) do
@@ -59,6 +74,32 @@ defmodule Gold do
   end
 
   @doc """
+  Returns the current number of blocks.
+  """
+  def getblockcount(pid), do: GenServer.call(pid, :getblockcount)
+
+  @doc """
+  Returns the current number of blocks, raising an exception on failure.
+  """
+  def getblockcount!(pid) do
+    {:ok, count} = getblockcount(pid)
+    count
+  end
+
+  @doc """
+  Returns the hash for block at height index.
+  """
+  def getblockhash(pid, index), do: GenServer.call(pid, {:getblockhash, [index]})
+
+  @doc """
+  Returns the hash for block at height index, raising an exception on failure.
+  """
+  def getblockhash!(pid, index) do
+    {:ok, hash} = getblockhash(pid, index)
+    hash
+  end
+
+  @doc """
   Returns a new bitcoin address for receiving payments.
   """
   def getnewaddress(pid), do: getnewaddress(pid, "")
@@ -92,6 +133,21 @@ defmodule Gold do
   def getaccount!(pid, address) do
     {:ok, account} = getaccount(pid, address)
     account
+  end
+
+  @doc """
+  Returns the accounts and their balances.
+  """
+  def listaccounts(pid) do
+    GenServer.call(pid, :listaccounts)
+  end
+
+  @doc """
+  Returns the accounts and their balances, raising an exception on failure.
+  """
+  def listaccounts!(pid) do
+    {:ok, accounts} = listaccounts(pid)
+    accounts
   end
 
   @doc """
@@ -169,12 +225,7 @@ defmodule Gold do
   Get raw transaction by id.
   """
   def getrawtransaction(pid, txid) do
-    case GenServer.call(pid, {:getrawtransaction, [txid]}) do
-      {:ok, transaction} ->
-        {:ok, transaction}
-      otherwise ->
-        otherwise
-    end
+    GenServer.call(pid, {:getrawtransaction, [txid]})
   end
 
   @doc """
@@ -236,6 +287,21 @@ defmodule Gold do
   """
   def importaddress!(pid, address, account, rescan) do
     {:ok, _} = importaddress(pid, address, account, rescan)
+    :ok
+  end
+
+  @doc """
+  Add a WIF private key to the wallet.
+  """
+  def importprivkey(pid, privkey, label) do
+    GenServer.call(pid, {:importprivkey, [privkey, label]})
+  end
+
+  @doc """
+  Add a WIF private key to the wallet, raising an exception on failure.
+  """
+  def importprivkey!(pid, privkey, label) do
+    {:ok, _} = importprivkey(pid, privkey, label)
     :ok
   end
 
