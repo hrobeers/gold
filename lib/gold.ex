@@ -290,15 +290,18 @@ defmodule Gold do
     :ok
   end
 
+  @import_timeout 120_000
   @doc """
   Add a WIF private key to the wallet.
+  This call times out after two minutes.
   """
   def importprivkey(pid, privkey, label) do
-    GenServer.call(pid, {:importprivkey, [privkey, label]})
+    GenServer.call(pid, {:importprivkey, [privkey, label]}, @import_timeout)
   end
 
   @doc """
   Add a WIF private key to the wallet, raising an exception on failure.
+  This call times out after two minutes.
   """
   def importprivkey!(pid, privkey, label) do
     {:ok, _} = importprivkey(pid, privkey, label)
@@ -326,13 +329,15 @@ defmodule Gold do
   ##
   def handle_call(request, _from, config) 
       when is_atom(request), do: handle_rpc_request(request, [], config)
+  def handle_call({:importprivkey, params}, _from, config)
+      when is_list(params), do: handle_rpc_request(:importprivkey, params, config, @import_timeout-100)
   def handle_call({request, params}, _from, config) 
       when is_atom(request) and is_list(params), do: handle_rpc_request(request, params, config)
 
   ##
   # Internal functions
   ##
-  defp handle_rpc_request(method, params, config) when is_atom(method) do
+  defp handle_rpc_request(method, params, config, timeout \\ 5000) when is_atom(method) do
     %Config{hostname: hostname, port: port, user: user, password: password} = config
 
     command = %{"jsonrpc": "2.0",
@@ -344,7 +349,7 @@ defmodule Gold do
 
     Logger.debug "Bitcoin RPC request for method: #{method}, params: #{inspect params}"
 
-    case HTTPoison.post("http://" <> hostname <> ":" <> to_string(port) <> "/", Poison.encode!(command), headers) do
+    case HTTPoison.post("http://" <> hostname <> ":" <> to_string(port) <> "/", Poison.encode!(command), headers, [{:recv_timeout, timeout}]) do
       {:ok, %{status_code: 200, body: body}} -> 
         case Poison.decode!(body) do
           %{"error" => nil, "result" => result} -> {:reply, {:ok, result}, config}
