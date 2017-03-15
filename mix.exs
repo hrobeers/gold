@@ -7,9 +7,9 @@ defmodule Gold.Mixfile do
      elixir: "~> 1.1",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps,
-     package: package,
-     description: description]
+     deps: deps(),
+     package: package(),
+     description: description()]
   end
 
   def application do
