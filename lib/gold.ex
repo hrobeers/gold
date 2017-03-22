@@ -238,6 +238,24 @@ defmodule Gold do
   end
 
   @doc """
+  Get raw transactions in batch by id.
+  """
+  def getrawtransactions(pid, txids) do
+    params_list = txids
+    |> Enum.map(&(%{id: &1, params: &1}))
+    GenServer.call(pid, {:batch, :getrawtransaction, params_list})
+  end
+
+  @doc """
+  Get raw transactions in batch by id, raising an exception on
+  failure.
+  """
+  def getrawtransactions!(pid, txids) do
+    {:ok, txns} = getrawtransactions(pid, txids)
+    txns
+  end
+
+  @doc """
   Send an amount to a given address.
   """
   def sendtoaddress(pid, address, %Decimal{} = amount) do
@@ -333,6 +351,8 @@ defmodule Gold do
       when is_list(params), do: handle_rpc_request(:importprivkey, params, config, @import_timeout-100)
   def handle_call({request, params}, _from, config) 
       when is_atom(request) and is_list(params), do: handle_rpc_request(request, params, config)
+  def handle_call({:batch, request, params_list}, _from, config)
+      when is_atom(request) and is_list(params_list), do: handle_batch_rpc_request(request, params_list, config)
 
   ##
   # Internal functions
@@ -362,6 +382,46 @@ defmodule Gold do
       {:ok, %{status_code: 500}} ->
         {:reply, :internal_server_error, config}
       otherwise -> 
+        {:reply, otherwise, config}
+    end
+  end
+
+  defp handle_batch_rpc_request(method, params_list, config, timeout \\ 5000) when is_atom(method) do
+    %Config{hostname: hostname, port: port, user: user, password: password} = config
+
+    commands = params_list
+    |> Enum.with_index
+    |> Enum.map(fn {%{params: params}, idx} ->
+      %{"jsonrpc": "2.0",
+        "method": to_string(method),
+        "params": [params],
+        "id": idx}
+    end)
+
+    headers = ["Authorization": "Basic " <> Base.encode64(user <> ":" <> password)]
+
+    Logger.debug "Bitcoin batch RPC request for method: #{method}, commands: #{inspect commands}"
+
+    case HTTPoison.post("http://" <> hostname <> ":" <> to_string(port) <> "/", Poison.encode!(commands), headers, [{:recv_timeout, timeout}]) do
+      {:ok, %{status_code: 200, body: body}} ->
+        results = body
+        |> Poison.decode!
+        |> Enum.map(fn(result) ->
+          case result do
+            %{"error" => nil, "result" => result, "id" => idx} ->
+              {params_list |> Enum.at(idx) |> Map.get(:id), result}
+            %{"error" => error, "id" => idx} ->
+              {params_list |> Enum.at(idx) |> Map.get(:id), {:error, error}}
+          end
+        end)
+        {:reply, {:ok, results}, config}
+      {:ok, %{status_code: 401}} ->
+        {:reply, :forbidden, config}
+      {:ok, %{status_code: 404}} ->
+        {:reply, :notfound, config}
+      {:ok, %{status_code: 500}} ->
+        {:reply, :internal_server_error, config}
+      otherwise ->
         {:reply, otherwise, config}
     end
   end
