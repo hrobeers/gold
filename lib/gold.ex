@@ -256,6 +256,22 @@ defmodule Gold do
   end
 
   @doc """
+  Send a raw transaction, returns the id.
+  """
+  def sendrawtransaction(pid, rawtx) do
+    GenServer.call(pid, {:sendrawtransaction, [rawtx]})
+  end
+
+  @doc """
+  Send a raw transaction, returns the id and raises an exception on
+  failure.
+  """
+  def sendrawtransaction!(pid, rawtx) do
+    {:ok, txid} = sendrawtransaction(pid, rawtx)
+    txid
+  end
+
+  @doc """
   Send an amount to a given address.
   """
   def sendtoaddress(pid, address, %Decimal{} = amount) do
