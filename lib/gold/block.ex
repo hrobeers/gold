@@ -22,19 +22,21 @@ defmodule Gold.Block do
              :height,
              :previousblockhash,
              :time,
-             :txns]
+             :txns,
+             :confirmations]
 
   @doc """
   Creates Block struct from JSON block object.
   """
-  def from_json(tx) do
+  def from_json(blk) do
     %Gold.Block{
-      flags:              Map.get(tx, "flags", nil),
-      hash:               Map.get(tx, "hash", nil),
-      height:             Map.get(tx, "height", nil),
-      previousblockhash:  Map.get(tx, "previousblockhash", nil),
-      time:               Map.get(tx, "time", nil),
-      txns:               Map.get(tx, "tx", nil)
+      flags:              Map.get(blk, "flags", nil),
+      hash:               Map.get(blk, "hash", nil),
+      height:             Map.get(blk, "height", nil),
+      previousblockhash:  Map.get(blk, "previousblockhash", nil),
+      time:               Map.get(blk, "time", nil),
+      txns:               Map.get(blk, "tx", nil),
+      confirmations:      Map.get(blk, "confirmations", nil)
     }
   end
 
